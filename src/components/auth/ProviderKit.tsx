@@ -27,7 +27,7 @@ export const AUTH_PROVIDERS: AuthProvider[] = [
   { id: "gitlab", label: "GitLab", kind: "social" },
   { id: "mastodon", label: "Mastodon / Fediverse", kind: "mastodon" },
   { id: "bluesky", label: "Bluesky", kind: "bluesky" },
-  { id: "oidc", label: "Keycloak", kind: "generic" },
+  { id: "oidc", label: "ROUT ID", kind: "generic" },
   { id: "infomaniak", label: "Infomaniak", kind: "generic" },
   { id: "proton", label: "Proton", kind: "generic" },
 ];

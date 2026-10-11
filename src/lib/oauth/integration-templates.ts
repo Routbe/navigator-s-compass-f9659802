@@ -1,6 +1,31 @@
 /** Pure generators for AI prompts and database schema templates (Developer Console). */
+import { BRAND, LOGO_INNER, LOGO_VIEWBOX } from "@/lib/brand/logo";
+
 export const ROUT_ISSUER = "https://rout.be";
 export const DISCOVERY_URL = `${ROUT_ISSUER}/.well-known/openid-configuration`;
+
+/**
+ * The official ROUT bunny as ready-to-paste inline SVG for AI coders.
+ * Source of truth is `src/lib/brand/logo.ts` — never draw another rabbit.
+ */
+export const ROUT_BUNNY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_VIEWBOX.width} ${LOGO_VIEWBOX.height}" fill="currentColor" role="img" aria-label="ROUT" width="20" height="25"><g fill="${BRAND.ink}">${LOGO_INNER}</g></svg>`;
+
+/** Branding & UI section shared by every generated AI prompt. */
+function brandingSection(): string[] {
+  return [
+    "",
+    "## Branding & UI (strict)",
+    `- The "Login with ROUT" button MUST show the official ROUT bunny logo. Use this exact inline SVG, unmodified (you may only change width/height proportionally and the fill color):`,
+    "",
+    "```html",
+    ROUT_BUNNY_SVG,
+    "```",
+    "",
+    `- Brand colors: ROUT purple ${BRAND.purple}, mint ${BRAND.mint}, ink ${BRAND.ink}, paper ${BRAND.paper}.`,
+    "- Button style: paper-white background, ink text, 1px border in ink at 12% opacity, fully rounded (pill); the bunny sits left of the label 'Doorgaan met ROUT' / 'Continue with ROUT'.",
+    "- Never redraw, stretch, rotate or recolor the bunny beyond the allowed fill change; never replace it with another icon or animal.",
+  ];
+}
 
 export type AppType = "web" | "spa" | "native";
 export type AiTool = "cursor" | "copilot" | "lovable" | "generic";
@@ -98,6 +123,7 @@ export function buildAiPrompt(app: TemplateApp, tool: AiTool, stack: Stack): str
       "- Support silent sign-in with `prompt=none`; handle `login_required` by falling back to the normal button.",
     );
   }
+  lines.push(...brandingSection());
   lines.push(
     "",
     "## Deliverables",
@@ -227,6 +253,7 @@ export function buildHandleSyncPrompt(app: PromptApp): string {
     "- Body: { id, type: 'user.handle.updated', created_at, client_id, data: { sub, previous_handle, rout_handle } }.",
     "- Ignore events whose `client_id` is not mine. Skip already-seen `id`s. Update the user where rout_id = data.sub.",
     "- Respond 200 within 5 s; ROUT retries non-2xx responses with backoff.",
+    ...brandingSection(),
     "",
     "## Tests to write",
     "- First login creates a user with username = rout_handle.",

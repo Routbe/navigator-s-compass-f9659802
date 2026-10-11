@@ -87,6 +87,45 @@ export function appReviewMail(o: { lang: MailLang; name: string; app: string; ap
   };
 }
 
+export function appCreatedMail(o: { lang: MailLang; name: string; app: string; clientId: string; consoleUrl: string }): Rendered {
+  const nl = o.lang === "nl";
+  return {
+    subject: nl ? `Je app ${o.app} is aangemaakt` : `Your app ${o.app} was created`,
+    html: layout({
+      lang: o.lang,
+      preview: nl ? "Je clientgeheim wordt eenmalig getoond." : "Your client secret is shown once.",
+      blocks: [
+        pill(nl ? "Ontwikkelaarsconsole" : "Developer console", "success"),
+        heading(nl ? "App geregistreerd" : "App registered"),
+        paragraph(hi(nl, o.name)),
+        paragraph(nl
+          ? `${o.app} is aangemaakt in de Developer Console. Het clientgeheim wordt alleen nu getoond — bewaar het veilig.`
+          : `${o.app} was created in the Developer Console. The client secret is only shown once — store it safely.`),
+        details([["Client ID", o.clientId]]),
+        actions(button(nl ? "Open de console" : "Open the console", o.consoleUrl)),
+      ],
+    }),
+  };
+}
+
+export function verificationRequestedMail(o: { lang: MailLang; app: string; clientId: string; note: string; reviewUrl: string }): Rendered {
+  const nl = o.lang === "nl";
+  return {
+    subject: nl ? `Verificatieverzoek: ${o.app}` : `Verification request: ${o.app}`,
+    html: layout({
+      lang: o.lang,
+      preview: nl ? "Er wacht een app op beoordeling." : "An app is waiting for review.",
+      blocks: [
+        pill(nl ? "Beheer" : "Admin", "warning"),
+        heading(nl ? "Nieuw verificatieverzoek" : "New verification request"),
+        paragraph(nl ? `De eigenaar van ${o.app} vraagt verificatie aan.` : `The owner of ${o.app} requested verification.`),
+        details([["Client ID", o.clientId], [nl ? "Notitie" : "Note", o.note || "—"]]),
+        actions(button(nl ? "Beoordeel het verzoek" : "Review the request", o.reviewUrl)),
+      ],
+    }),
+  };
+}
+
 export function subdomainMail(o: { lang: MailLang; name: string; subdomain: string; stage: "requested" | "active"; url: string }): Rendered {
   const nl = o.lang === "nl";
   const live = o.stage === "active";

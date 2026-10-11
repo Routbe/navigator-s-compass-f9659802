@@ -99,7 +99,7 @@ export function IdentitiesPanel() {
       <div>
         <h2 className="text-lg font-medium">{t("oauth.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Koppel je accounts bij Google, GitHub, GitLab, Mastodon, Bluesky, Keycloak, Infomaniak en Proton. Met elk gekoppeld account kun je inloggen.
+          Koppel je accounts bij Google, GitHub, GitLab, Mastodon, Bluesky, ROUT ID (onze eigen provider), Infomaniak en Proton. Met elk gekoppeld account kun je inloggen.
         </p>
       </div>
 

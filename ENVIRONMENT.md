@@ -51,9 +51,9 @@
 - `INFOMANIAK_CLIENT_ID` — OAuth app credential.
 - `INFOMANIAK_CLIENT_SECRET` — OAuth app credential.
 - `PROTON_CLIENT_ID`, `PROTON_CLIENT_SECRET`, `PROTON_DISCOVERY_URL` — Proton OIDC (scopes openid profile email); callback `/api/auth/oauth2/callback/proton`. Proton offers no public OIDC for third parties yet; stays inactive until all three are set.
-- `OIDC_CLIENT_ID` — OAuth app credential.
-- `OIDC_CLIENT_SECRET` — OAuth app credential.
-- `OIDC_DISCOVERY_URL` — OAuth app credential.
+- `OIDC_CLIENT_ID` — External Keycloak-compatible provider credential (optional).
+- `OIDC_CLIENT_SECRET` — External Keycloak-compatible provider credential (optional).
+- `OIDC_DISCOVERY_URL` — External Keycloak-compatible provider credential (optional). Without all three, "ROUT ID" uses our own native OIDC provider (`/.well-known/openid-configuration`, first-party PKCE client `rout_native_self`, db/78) — no external keys needed.
 
 ## Login via ROUT (provider role)
 

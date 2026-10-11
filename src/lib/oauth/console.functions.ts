@@ -91,7 +91,14 @@ export const saveOAuthClient = createServerFn({ method: "POST" })
       const { RATE_RULES } = await import("@/lib/rate-limit-rules");
       const limit = await hitRateLimit("app-create", context.userId, RATE_RULES.appCreate);
       if (!limit.ok) throw new Error("Je hebt het maximum aantal nieuwe apps per uur bereikt. Probeer later opnieuw.");
-      return createClient(context.userId, input);
+      const created = await createClient(context.userId, input);
+      const { later, recipient, sendSiteMail, siteOrigin } = await import("@/lib/site-mail.server");
+      later(async () => {
+        const r = await recipient(context.userId);
+        const { appCreatedMail } = await import("@/emails/site-mails");
+        await sendSiteMail(r.email, appCreatedMail({ lang: r.lang, name: r.name, app: created.client.name, clientId: created.client.clientId, consoleUrl: `${siteOrigin()}/developers` }), ["console", "app-created"]);
+      });
+      return created;
     });
   });
 
@@ -189,6 +196,17 @@ export const requestOAuthVerification = createServerFn({ method: "POST" })
     await assertVerified(context.userId);
     const { requestVerification } = await import("./provider.server");
     await friendly(() => requestVerification(context.userId, data.id, data.note ?? ""));
+    const { later, sendSiteMail, siteOrigin } = await import("@/lib/site-mail.server");
+    later(async () => {
+      const { sql } = await import("@/lib/neon");
+      const rows = (await sql`select name, client_id from public.oauth_clients where id = ${data.id} limit 1`) as Record<string, unknown>[];
+      const app = String(rows[0]?.["name"] ?? "onbekende app");
+      const clientId = String(rows[0]?.["client_id"] ?? "");
+      const adminEmail = process.env["ADMIN_EMAIL"] ?? process.env["BREVO_ADMIN_EMAIL"] ?? null;
+      const { verificationRequestedMail } = await import("@/emails/site-mails");
+      const { mailLang } = await import("@/emails/verification-mails");
+      await sendSiteMail(adminEmail, verificationRequestedMail({ lang: mailLang("nl"), app, clientId, note: data.note ?? "", reviewUrl: `${siteOrigin()}/admin` }), ["console", "verification-requested"]);
+    });
     return { ok: true };
   });
 
