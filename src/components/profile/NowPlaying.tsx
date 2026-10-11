@@ -188,13 +188,3 @@ export function NowPlaying({ handle, theme }: { handle: string; theme: Theme }) 
   );
 }
 
-/** Small headphone mark for the avatar status bubble while music plays. */
-export function ListeningMark({ handle }: { handle: string }) {
-  const q = useNowPlaying(handle);
-  if (!q.data?.playing) return null;
-  return (
-    <span className="ml-1 inline-flex items-center" role="img" aria-label="Luistert nu muziek" title={`${q.data.title} — ${q.data.artist}`}>
-      🎧
-    </span>
-  );
-}
