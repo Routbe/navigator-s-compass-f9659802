@@ -50,6 +50,7 @@
 - `GITLAB_CLIENT_SECRET` — OAuth app credential.
 - `INFOMANIAK_CLIENT_ID` — OAuth app credential.
 - `INFOMANIAK_CLIENT_SECRET` — OAuth app credential.
+- `PROTON_CLIENT_ID`, `PROTON_CLIENT_SECRET`, `PROTON_DISCOVERY_URL` — Proton OIDC (scopes openid profile email); callback `/api/auth/oauth2/callback/proton`. Proton offers no public OIDC for third parties yet; stays inactive until all three are set.
 - `OIDC_CLIENT_ID` — OAuth app credential.
 - `OIDC_CLIENT_SECRET` — OAuth app credential.
 - `OIDC_DISCOVERY_URL` — OAuth app credential.

@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { authClient } from "@/lib/auth-client";
 import { getMyIdentities, unlinkMyIdentity } from "@/lib/identities.functions";
 import type { IdentityRow } from "@/lib/identities.server";
+import { EMAIL_TRUST_LABEL, emailTrust } from "@/lib/email-trust";
 import { AUTH_PROVIDERS, FediverseDialog, ProviderMark, type AuthProvider } from "@/components/auth/ProviderKit";
 
 const RETURN_PATH = "/settings?tab=identities";
@@ -98,7 +99,7 @@ export function IdentitiesPanel() {
       <div>
         <h2 className="text-lg font-medium">{t("oauth.title")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Koppel je accounts bij Google, GitHub, GitLab, Mastodon, Bluesky, Keycloak en Infomaniak. Met elk gekoppeld account kun je inloggen.
+          Koppel je accounts bij Google, GitHub, GitLab, Mastodon, Bluesky, Keycloak, Infomaniak en Proton. Met elk gekoppeld account kun je inloggen.
         </p>
       </div>
 
@@ -124,6 +125,14 @@ export function IdentitiesPanel() {
                     <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
                       Gekoppeld als {identity.displayName ?? identity.email ?? identity.providerAccountId}
                     </span>
+                    {(() => {
+                      const level = emailTrust({ email: identity.email, emailVerified: true, verifiedBy: [identity.provider] });
+                      return level === "sovereign" || level === "provider" ? (
+                        <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          {EMAIL_TRUST_LABEL[level]}
+                        </span>
+                      ) : null;
+                    })()}
                     <Button variant="ghost" size="sm" disabled={onlyMethod} onClick={() => unlink(identity.id)}>
                       {t("oauth.unlink")}
                     </Button>
