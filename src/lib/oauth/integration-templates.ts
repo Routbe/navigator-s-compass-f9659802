@@ -123,6 +123,7 @@ export function buildAiPrompt(app: TemplateApp, tool: AiTool, stack: Stack): str
       "- Support silent sign-in with `prompt=none`; handle `login_required` by falling back to the normal button.",
     );
   }
+  lines.push(...brandingSection());
   lines.push(
     "",
     "## Deliverables",
@@ -252,6 +253,7 @@ export function buildHandleSyncPrompt(app: PromptApp): string {
     "- Body: { id, type: 'user.handle.updated', created_at, client_id, data: { sub, previous_handle, rout_handle } }.",
     "- Ignore events whose `client_id` is not mine. Skip already-seen `id`s. Update the user where rout_id = data.sub.",
     "- Respond 200 within 5 s; ROUT retries non-2xx responses with backoff.",
+    ...brandingSection(),
     "",
     "## Tests to write",
     "- First login creates a user with username = rout_handle.",
