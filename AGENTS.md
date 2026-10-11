@@ -32,4 +32,3 @@
 - Total reach is summed only from Connections Hub rows (`user_integrations`, db/74): open platforms auto-fetch, others use a per-integration manual count; never social_links or placeholders. Why: the number must reflect what the member actually connected.
 - Emailed action links (review, booking) only confirm on GET, change on POST; status mails send fire-and-forget. Why: scanners open links; mail failures never block actions.
 - 2FA/passkeys: Better Auth `twoFactor` + `@better-auth/passkey`, tables in `neon_auth` (db/77). Why: no custom crypto.
-- Email trust badges come only from `src/lib/email-trust.ts`: provider/sovereign badges need a strict provider vouching for its own mailbox domain; custom domains need our DNS/TXT proof. Why: expired-domain takeovers must never look trusted.
