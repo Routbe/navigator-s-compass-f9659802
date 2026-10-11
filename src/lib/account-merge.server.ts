@@ -120,6 +120,15 @@ async function transferOwnership(primaryId: string, secondaryId: string) {
     }
   }
 
+  // Better Auth sign-in identities and passkeys move too (camelCase columns).
+  for (const table of ["account", "passkey"]) {
+    try {
+      await sql.query(`update neon_auth."${table}" set "userId" = $1 where "userId" = $2`, [primaryId, secondaryId]);
+    } catch (error) {
+      console.error(`[merge] could not transfer neon_auth.${table}`, error);
+    }
+  }
+
   // Verification, badges tier and paid status always win in favour of "yes".
   await sql`
     update public.profiles p
@@ -143,7 +152,8 @@ async function transferOwnership(primaryId: string, secondaryId: string) {
 
 export async function redeemMergeTicket(input: {
   secondaryUserId: string;
-  secondaryPassword: string;
+  /** Optional: only checked when given. The active session is the authorization. */
+  secondaryPassword?: string | null;
   pin?: string | null;
   token?: string | null;
 }) {
@@ -160,15 +170,13 @@ export async function redeemMergeTicket(input: {
     return { ok: false as const, reason: "same_account" as const };
   }
 
-  // Step C — the secondary account re-confirms its own password.
-  const rows = (await sql`
-    select password_hash from public.users where id = ${input.secondaryUserId} limit 1
-  `) as Row[];
-  const ok = await verifyPassword(
-    input.secondaryPassword,
-    (rows[0]?.["password_hash"] as string | null) ?? null,
-  );
-  if (!ok) return { ok: false as const, reason: "bad_password" as const };
+  // Passwordless (OAuth/passkey) accounts are authorized by their live session;
+  // a password is only verified when the member chooses to enter one.
+  if (input.secondaryPassword) {
+    if (!(await verifyOwnPassword(input.secondaryUserId, input.secondaryPassword))) {
+      return { ok: false as const, reason: "bad_password" as const };
+    }
+  }
 
   await transferOwnership(primaryId, input.secondaryUserId);
 

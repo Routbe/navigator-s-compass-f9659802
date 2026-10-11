@@ -25,3 +25,15 @@ export const disconnectSpotifyPresence = createServerFn({ method: "POST" })
     await s.disconnectSpotify(context.userId);
     return { ok: true };
   });
+
+export const setSpotifyPresenceScope = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((input: { verified: boolean; alias: boolean }) => ({
+    verified: input?.verified === true,
+    alias: input?.alias === true,
+  }))
+  .handler(async ({ data, context }) => {
+    const s = await import("./spotify-presence.server");
+    await s.setSpotifyScope(context.userId, data);
+    return { ok: true };
+  });

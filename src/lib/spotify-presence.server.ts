@@ -151,6 +151,8 @@ export type NowPlaying = {
   album?: string;
   image?: string | null;
   url?: string | null;
+  progressMs?: number;
+  durationMs?: number;
 };
 
 /** Only public track info; never tokens or account details. */
@@ -163,8 +165,9 @@ export async function nowPlaying(userId: string): Promise<NowPlaying> {
   if (res.status === 204 || !res.ok) return { playing: false };
   const j = (await res.json()) as {
     is_playing?: boolean;
+    progress_ms?: number;
     currently_playing_type?: string;
-    item?: { name: string; artists?: { name: string }[]; album?: { name: string; images?: { url: string }[] }; external_urls?: { spotify?: string } };
+    item?: { name: string; artists?: { name: string }[]; album?: { name: string; images?: { url: string }[] }; external_urls?: { spotify?: string }; duration_ms?: number };
   };
   if (!j.is_playing || !j.item) return { playing: false };
   return {
@@ -174,21 +177,32 @@ export async function nowPlaying(userId: string): Promise<NowPlaying> {
     album: j.item.album?.name,
     image: j.item.album?.images?.[0]?.url ?? null,
     url: j.item.external_urls?.spotify ?? null,
+    progressMs: j.progress_ms ?? 0,
+    durationMs: j.item.duration_ms ?? 0,
   };
 }
 
 export async function myConnections(userId: string) {
   const rows = await sql`
-    select provider, account_name, show_on_profile from public.user_presence_connections where user_id = ${userId}`;
+    select provider, account_name, show_on_profile, show_on_verified, show_on_alias
+      from public.user_presence_connections where user_id = ${userId}`;
   return rows.map((r) => ({
     provider: r["provider"] as string,
     accountName: (r["account_name"] as string | null) ?? null,
     showOnProfile: Boolean(r["show_on_profile"]),
+    showOnVerified: r["show_on_verified"] !== false,
+    showOnAlias: r["show_on_alias"] !== false,
   }));
 }
 
 export async function setShowOnProfile(userId: string, show: boolean) {
   await sql`update public.user_presence_connections set show_on_profile = ${show}, updated_at = now()
+    where user_id = ${userId} and provider = 'spotify'`;
+}
+
+export async function setSpotifyScope(userId: string, scope: { verified: boolean; alias: boolean }) {
+  await sql`update public.user_presence_connections
+    set show_on_verified = ${scope.verified}, show_on_alias = ${scope.alias}, updated_at = now()
     where user_id = ${userId} and provider = 'spotify'`;
 }
 
@@ -205,6 +219,7 @@ export async function publicSpotifyOwner(handle: string): Promise<string | null>
     where c.provider = 'spotify' and c.show_on_profile = true
       and (lower(p.username) = lower(${handle}) or lower(a.handle) = lower(${handle}))
       and coalesce((coalesce(a.display_prefs, p.display_prefs) ->> 'publicProfile')::boolean, true)
+      and case when lower(a.handle) = lower(${handle}) then c.show_on_alias else c.show_on_verified end
     limit 1`;
   return (rows[0]?.["user_id"] as string | undefined) ?? null;
 }
