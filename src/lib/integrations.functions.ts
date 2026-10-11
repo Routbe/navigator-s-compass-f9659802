@@ -22,6 +22,8 @@ const saveSchema = z.object({
   audience: z.enum(["pro", "social", "both"]),
   visible: z.boolean(),
   useSso: z.boolean().optional(),
+  showOnVerified: z.boolean().optional(),
+  showOnAlias: z.boolean().optional(),
 });
 
 export const saveIntegration = createServerFn({ method: "POST" })

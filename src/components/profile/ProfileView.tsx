@@ -1,4 +1,4 @@
-import { NowPlaying } from "@/components/profile/NowPlaying";
+import { NowPlaying, useNowPlaying } from "@/components/profile/NowPlaying";
 import { ProfileIntegrations } from "@/components/profile/ProfileIntegrations";
 import { cn } from "@/lib/utils";
 import {
@@ -375,15 +375,7 @@ export function ProfileView({
             </div>
           )}
         </AvatarFrameWrapper>
-        {prefs.statusLine && (
-          <StatusBubble
-            text={prefs.statusLine}
-            position={prefs.statusBubblePosition}
-            bubbleStyle={prefs.statusBubbleStyle}
-            bg={prefs.statusBubbleBg}
-            font={prefs.statusBubbleFont}
-          />
-        )}
+        <ProfileStatus handle={profile.username ?? null} prefs={prefs} />
         </div>
 
         <h1
@@ -831,5 +823,27 @@ export function DecorationShape({ d }: { d: Decoration }) {
     <svg className="absolute" style={pos} viewBox="0 0 100 100">
       <path d={paths[d.kind]} fill={d.color} />
     </svg>
+  );
+}
+
+/** Status bubble; a 🎧 mark joins in automatically while Spotify plays. */
+function ProfileStatus({ handle, prefs }: {
+  handle: string | null;
+  prefs: { statusLine?: string | null; statusBubblePosition: Parameters<typeof StatusBubble>[0]["position"]; statusBubbleStyle: Parameters<typeof StatusBubble>[0]["bubbleStyle"]; statusBubbleBg: string | null; statusBubbleFont: Parameters<typeof StatusBubble>[0]["font"] };
+}) {
+  const np = useNowPlaying(handle);
+  const playing = Boolean(np.data?.playing);
+  if (!prefs.statusLine && !playing) return null;
+  return (
+    <StatusBubble
+      text={prefs.statusLine ?? ""}
+      position={prefs.statusBubblePosition}
+      bubbleStyle={prefs.statusBubbleStyle}
+      bg={prefs.statusBubbleBg}
+      font={prefs.statusBubbleFont}
+      extra={playing ? (
+        <span className="ml-1 inline-flex" role="img" aria-label="Luistert nu muziek" title={`${np.data?.title ?? ""} — ${np.data?.artist ?? ""}`}>🎧</span>
+      ) : undefined}
+    />
   );
 }

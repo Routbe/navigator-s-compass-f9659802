@@ -37,3 +37,10 @@ export function evaluateOtp(state: OtpState, nowMs: number, matches: boolean): O
   if (state.attempts >= OTP_MAX_ATTEMPTS) return "too_many_attempts";
   return matches ? "ok" : "invalid";
 }
+
+/** Automatic outbound SMS only for Belgian numbers (free via own gateway). */
+export const AUTO_SMS_PREFIX = "+32";
+export const INBOUND_VERIFY_LINE = "+32 486 35 31 11";
+export function usesAutoSms(e164: string): boolean {
+  return e164.startsWith(AUTO_SMS_PREFIX);
+}

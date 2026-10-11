@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { addPasskey, deletePasskey, listPasskeys } from "@/lib/webauthn.functions";
 import { deviceLabelFrom } from "@/lib/passkey-label";
+import { passkeyErrorMessage } from "@/lib/passkey-errors";
 
 interface PasskeyRow {
   id: string;
@@ -100,12 +101,7 @@ export function PasskeysPanel() {
     } catch (err) {
       console.error("[passkeys] registration failed", err);
       const name = (err as { name?: string }).name;
-      const message =
-        name === "NotAllowedError" || name === "AbortError"
-          ? "Registration was cancelled."
-          : name === "InvalidStateError"
-            ? "This device already has a passkey for your account."
-            : describe(err, "Something went wrong adding this passkey.");
+      const message = passkeyErrorMessage(name, null, describe(err, "Something went wrong adding this passkey."));
       setError(message);
       toast.error(message);
     } finally {

@@ -2,7 +2,7 @@ import { sql } from "@/lib/neon";
 import { runSchemaEnsure } from "@/lib/db/schema-ensure.server";
 import { hitRateLimit } from "@/lib/rate-limit-db.server";
 import { RATE_RULES } from "@/lib/rate-limit-rules";
-import { evaluateOtp, generateOtp, maskPhone, OTP_TTL_MS } from "./otp-rules";
+import { INBOUND_VERIFY_LINE, usesAutoSms, evaluateOtp, generateOtp, maskPhone, OTP_TTL_MS } from "./otp-rules";
 import { encryptText, keyedHash } from "./phone-crypto";
 import { getSmsSender, missingSmsKeys } from "./sms-provider.server";
 
@@ -43,11 +43,13 @@ export type RequestResult =
   | { status: "sent"; expiresAt: string; masked: string }
   | { status: "not_configured" }
   | { status: "rate_limited"; retryAfter: number }
-  | { status: "send_failed" };
+  | { status: "send_failed" }
+  | { status: "manual"; code: string; expiresAt: string; masked: string; line: string };
 
 export async function requestPhoneCode(userId: string, phone: string, ip: string): Promise<RequestResult> {
+  const auto = usesAutoSms(phone);
   const sender = getSmsSender();
-  if (!sender) {
+  if (auto && !sender) {
     console.warn(`[phone] SMS not configured; missing ${missingSmsKeys().join(", ")}`);
     return { status: "not_configured" };
   }
@@ -69,8 +71,13 @@ export async function requestPhoneCode(userId: string, phone: string, ip: string
   await sql`insert into public.phone_otp_codes (user_id, phone_hash, phone_number_enc, phone_last4, code_hash, expires_at)
     values (${userId}, ${phoneHash}, ${await encryptText(phone, secret())}, ${last4},
             ${await keyedHash(`${userId}:${code}`, secret())}, ${expiresAt})`;
+  if (!auto) {
+    // International: the member sends this code from their own number (or via
+    // Telegram); an admin/inbound handler confirms it. No costly outbound SMS.
+    return { status: "manual", code, expiresAt, masked: maskPhone(last4), line: INBOUND_VERIFY_LINE };
+  }
   try {
-    await sender.send(phone, `Je ROUT-code: ${code}. Geldig 10 minuten. Deel deze code met niemand.`);
+    await sender!.send(phone, `Je ROUT-code: ${code}. Geldig 10 minuten. Deel deze code met niemand.`);
   } catch {
     return { status: "send_failed" };
   }
@@ -110,4 +117,28 @@ export async function removePhone(userId: string): Promise<void> {
   await ensure();
   await sql`delete from public.user_phone_numbers where user_id = ${userId}`;
   await sql`update public.phone_otp_codes set consumed_at = now() where user_id = ${userId} and consumed_at is null`;
+}
+
+/**
+ * Inbound verification (international numbers): the member texts their code
+ * from their own phone to our line; the gateway webhook calls this. The code
+ * only counts when it arrives from the same number it was issued for.
+ */
+export async function confirmInboundCode(fromPhone: string, text: string): Promise<boolean> {
+  await ensure();
+  const code = text.match(/\b(\d{6})\b/)?.[1];
+  if (!code) return false;
+  const phoneHash = await keyedHash(fromPhone, secret());
+  const rows = (await sql`select * from public.phone_otp_codes where phone_hash = ${phoneHash}
+    and consumed_at is null and expires_at > now() order by created_at desc limit 1`) as Record<string, unknown>[];
+  const row = rows[0];
+  if (!row) return false;
+  const userId = row["user_id"] as string;
+  if ((await keyedHash(`${userId}:${code}`, secret())) !== row["code_hash"]) return false;
+  await sql`update public.phone_otp_codes set consumed_at = now() where id = ${row["id"] as string}`;
+  await sql`insert into public.user_phone_numbers (user_id, phone_number_enc, phone_hash, phone_last4, phone_verified, phone_verified_at)
+    values (${userId}, ${row["phone_number_enc"] as string}, ${phoneHash}, ${row["phone_last4"] as string}, true, now())
+    on conflict (user_id) do update set phone_number_enc = excluded.phone_number_enc, phone_hash = excluded.phone_hash,
+      phone_last4 = excluded.phone_last4, phone_verified = true, phone_verified_at = now(), updated_at = now()`;
+  return true;
 }

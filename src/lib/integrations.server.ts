@@ -21,6 +21,8 @@ export type MyIntegration = {
   audience: Audience;
   visible: boolean;
   verified: boolean;
+  showOnVerified: boolean;
+  showOnAlias: boolean;
 };
 
 export type PublicIntegration = MyIntegration & { status: IntegrationStatus | null };
@@ -35,6 +37,8 @@ function toMine(r: Row): MyIntegration {
     audience: (r["audience"] as Audience) ?? "both",
     visible: r["visible"] !== false,
     verified: r["verified"] === true,
+    showOnVerified: r["show_on_verified"] !== false,
+    showOnAlias: r["show_on_alias"] !== false,
   };
 }
 
@@ -206,14 +210,14 @@ function decodeXml(s: string): string {
 
 export async function listMine(userId: string): Promise<MyIntegration[]> {
   const rows = (await sql`
-    select provider, handle, audience, visible, verified from public.user_integrations
+    select provider, handle, audience, visible, verified, show_on_verified, show_on_alias from public.user_integrations
      where user_id = ${userId} order by created_at`) as Row[];
   return rows.map(toMine);
 }
 
 export async function saveMine(
   userId: string,
-  input: { provider: string; handle?: string; audience: Audience; visible: boolean; useSso?: boolean },
+  input: { provider: string; handle?: string; audience: Audience; visible: boolean; useSso?: boolean; showOnVerified?: boolean; showOnAlias?: boolean },
 ): Promise<MyIntegration> {
   const item = integrationById(input.provider);
   if (!item || item.mode === "soon" || item.mode === "oauth") throw new Error("unsupported_provider");
@@ -223,15 +227,18 @@ export async function saveMine(
   if (!handle) throw new Error("invalid_value");
   const verified = Boolean(ssoHandle && ssoHandle.toLowerCase() === handle.toLowerCase());
   const rows = (await sql`
-    insert into public.user_integrations (user_id, provider, handle, audience, visible, verified, status_json, status_at)
-    values (${userId}, ${input.provider}, ${handle}, ${input.audience}, ${input.visible}, ${verified}, null, null)
+    insert into public.user_integrations (user_id, provider, handle, audience, visible, verified, status_json, status_at, show_on_verified, show_on_alias)
+    values (${userId}, ${input.provider}, ${handle}, ${input.audience}, ${input.visible}, ${verified}, null, null,
+            ${input.showOnVerified ?? true}, ${input.showOnAlias ?? true})
     on conflict (user_id, provider) do update set
       handle = excluded.handle, audience = excluded.audience, visible = excluded.visible,
+      show_on_verified = coalesce(${input.showOnVerified ?? null}::boolean, public.user_integrations.show_on_verified),
+      show_on_alias = coalesce(${input.showOnAlias ?? null}::boolean, public.user_integrations.show_on_alias),
       verified = excluded.verified,
       status_json = case when public.user_integrations.handle = excluded.handle then public.user_integrations.status_json end,
       status_at = case when public.user_integrations.handle = excluded.handle then public.user_integrations.status_at end,
       updated_at = now()
-    returning provider, handle, audience, visible, verified`) as Row[];
+    returning provider, handle, audience, visible, verified, show_on_verified, show_on_alias`) as Row[];
   return toMine(rows[0]!);
 }
 
@@ -249,6 +256,7 @@ export async function publicIntegrations(handle: string, mode: "pro" | "social" 
      where i.visible = true
        and (lower(p.username) = lower(${handle}) or lower(a.handle) = lower(${handle}))
        and coalesce((coalesce(a.display_prefs, p.display_prefs) ->> 'publicProfile')::boolean, true)
+       and case when lower(a.handle) = lower(${handle}) then i.show_on_alias else i.show_on_verified end
      order by i.created_at
      limit 40`) as Row[];
   const shown = visibleForMode(rows.map((r) => ({ ...toMine(r), row: r })), mode);

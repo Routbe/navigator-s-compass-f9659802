@@ -128,6 +128,7 @@ import { Route as ApiPublicOauthUserinfoRouteImport } from './routes/api_.public
 import { Route as ApiPublicOgHandleRouteImport } from './routes/api_.public.og.$handle'
 import { Route as ApiPublicQrUploadRouteImport } from './routes/api_.public.qr.upload'
 import { Route as ApiPublicSessionLogoutRouteImport } from './routes/api_.public.session.logout'
+import { Route as ApiPublicSmsInboundRouteImport } from './routes/api_.public.sms.inbound'
 import { Route as ApiPublicSpotifyCallbackRouteImport } from './routes/api_.public.spotify.callback'
 import { Route as ApiPublicWeatherWebhookTokenRouteImport } from './routes/api_.public.weather-webhook.$token'
 import { Route as ApiPublicWebhooksBankingRouteImport } from './routes/api_.public.webhooks.banking'
@@ -767,6 +768,11 @@ const ApiPublicSessionLogoutRoute = ApiPublicSessionLogoutRouteImport.update({
   path: '/api/public/session/logout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSmsInboundRoute = ApiPublicSmsInboundRouteImport.update({
+  id: '/api_/public/sms/inbound',
+  path: '/api/public/sms/inbound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSpotifyCallbackRoute =
   ApiPublicSpotifyCallbackRouteImport.update({
     id: '/api_/public/spotify/callback',
@@ -988,6 +994,7 @@ export interface FileRoutesByFullPath {
   '/api/public/og/$handle': typeof ApiPublicOgHandleRoute
   '/api/public/qr/upload': typeof ApiPublicQrUploadRoute
   '/api/public/session/logout': typeof ApiPublicSessionLogoutRoute
+  '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
   '/api/public/spotify/callback': typeof ApiPublicSpotifyCallbackRoute
   '/api/public/weather-webhook/$token': typeof ApiPublicWeatherWebhookTokenRoute
   '/api/public/webhooks/banking': typeof ApiPublicWebhooksBankingRoute
@@ -1121,6 +1128,7 @@ export interface FileRoutesByTo {
   '/api/public/og/$handle': typeof ApiPublicOgHandleRoute
   '/api/public/qr/upload': typeof ApiPublicQrUploadRoute
   '/api/public/session/logout': typeof ApiPublicSessionLogoutRoute
+  '/api/public/sms/inbound': typeof ApiPublicSmsInboundRoute
   '/api/public/spotify/callback': typeof ApiPublicSpotifyCallbackRoute
   '/api/public/weather-webhook/$token': typeof ApiPublicWeatherWebhookTokenRoute
   '/api/public/webhooks/banking': typeof ApiPublicWebhooksBankingRoute
@@ -1260,6 +1268,7 @@ export interface FileRoutesById {
   '/api_/public/og/$handle': typeof ApiPublicOgHandleRoute
   '/api_/public/qr/upload': typeof ApiPublicQrUploadRoute
   '/api_/public/session/logout': typeof ApiPublicSessionLogoutRoute
+  '/api_/public/sms/inbound': typeof ApiPublicSmsInboundRoute
   '/api_/public/spotify/callback': typeof ApiPublicSpotifyCallbackRoute
   '/api_/public/weather-webhook/$token': typeof ApiPublicWeatherWebhookTokenRoute
   '/api_/public/webhooks/banking': typeof ApiPublicWebhooksBankingRoute
@@ -1399,6 +1408,7 @@ export interface FileRouteTypes {
     | '/api/public/og/$handle'
     | '/api/public/qr/upload'
     | '/api/public/session/logout'
+    | '/api/public/sms/inbound'
     | '/api/public/spotify/callback'
     | '/api/public/weather-webhook/$token'
     | '/api/public/webhooks/banking'
@@ -1532,6 +1542,7 @@ export interface FileRouteTypes {
     | '/api/public/og/$handle'
     | '/api/public/qr/upload'
     | '/api/public/session/logout'
+    | '/api/public/sms/inbound'
     | '/api/public/spotify/callback'
     | '/api/public/weather-webhook/$token'
     | '/api/public/webhooks/banking'
@@ -1670,6 +1681,7 @@ export interface FileRouteTypes {
     | '/api_/public/og/$handle'
     | '/api_/public/qr/upload'
     | '/api_/public/session/logout'
+    | '/api_/public/sms/inbound'
     | '/api_/public/spotify/callback'
     | '/api_/public/weather-webhook/$token'
     | '/api_/public/webhooks/banking'
@@ -1774,6 +1786,7 @@ export interface RootRouteChildren {
   ApiPublicOgHandleRoute: typeof ApiPublicOgHandleRoute
   ApiPublicQrUploadRoute: typeof ApiPublicQrUploadRoute
   ApiPublicSessionLogoutRoute: typeof ApiPublicSessionLogoutRoute
+  ApiPublicSmsInboundRoute: typeof ApiPublicSmsInboundRoute
   ApiPublicSpotifyCallbackRoute: typeof ApiPublicSpotifyCallbackRoute
   ApiPublicWeatherWebhookTokenRoute: typeof ApiPublicWeatherWebhookTokenRoute
   ApiPublicWebhooksBankingRoute: typeof ApiPublicWebhooksBankingRoute
@@ -2615,6 +2628,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSessionLogoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api_/public/sms/inbound': {
+      id: '/api_/public/sms/inbound'
+      path: '/api/public/sms/inbound'
+      fullPath: '/api/public/sms/inbound'
+      preLoaderRoute: typeof ApiPublicSmsInboundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api_/public/spotify/callback': {
       id: '/api_/public/spotify/callback'
       path: '/api/public/spotify/callback'
@@ -3034,6 +3054,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicOgHandleRoute: ApiPublicOgHandleRoute,
   ApiPublicQrUploadRoute: ApiPublicQrUploadRoute,
   ApiPublicSessionLogoutRoute: ApiPublicSessionLogoutRoute,
+  ApiPublicSmsInboundRoute: ApiPublicSmsInboundRoute,
   ApiPublicSpotifyCallbackRoute: ApiPublicSpotifyCallbackRoute,
   ApiPublicWeatherWebhookTokenRoute: ApiPublicWeatherWebhookTokenRoute,
   ApiPublicWebhooksBankingRoute: ApiPublicWebhooksBankingRoute,

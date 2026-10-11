@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { GitMerge, Loader2 } from "lucide-react";
+import { Copy, GitMerge, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,7 @@ export function MergeAccountWizard() {
     try {
       const result = await startAccountMerge({ data: { password: primaryPassword } });
       if (!result.ok) {
-        toast.error(t("merge_account.error"));
+        toast.error("Dat wachtwoord klopt niet. Laat het veld leeg als je geen wachtwoord hebt.");
         return;
       }
       setTicket({ pin: result.pin, qrPayload: result.qrPayload, expiresAt: result.expiresAt });
@@ -58,11 +58,18 @@ export function MergeAccountWizard() {
       const trimmed = pin.trim();
       const result = await redeemAccountMerge({
         data: trimmed.startsWith("rout-merge:")
-          ? { token: trimmed, password: secondaryPassword }
-          : { pin: trimmed, password: secondaryPassword },
+          ? { token: trimmed, password: secondaryPassword || undefined }
+          : { pin: trimmed, password: secondaryPassword || undefined },
       });
       if (!result.ok) {
-        toast.error(t("merge_account.error"));
+        const reason = (result as { reason?: string }).reason;
+        toast.error(
+          reason === "same_account"
+            ? "Deze code hoort bij dit account zelf. Gebruik hem op je tweede account."
+            : reason === "bad_password"
+              ? "Dat wachtwoord klopt niet. Laat het veld leeg als je geen wachtwoord hebt."
+              : "Deze code is ongeldig of verlopen. Genereer een nieuwe op je hoofdaccount.",
+        );
         return;
       }
       toast.success(t("merge_account.success"));
@@ -107,24 +114,43 @@ export function MergeAccountWizard() {
           <p className="text-sm font-medium">{t("merge_account.step_a")}</p>
           {ticket ? (
             <div className="flex flex-col items-center gap-3">
-              <QRCodeSVG value={ticket.qrPayload} size={160} />
-              <p className="font-mono text-2xl tracking-[0.4em]">{ticket.pin}</p>
-              <p className="text-xs text-muted-foreground">{t("merge_account.expires")}</p>
+              <div className="w-full rounded-2xl border-2 border-primary/50 bg-primary/5 p-4 text-center">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Je merge-code</p>
+                <p className="mt-1 font-mono text-3xl font-semibold tracking-[0.4em]">{ticket.pin}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 gap-1.5"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(ticket.pin);
+                    toast.success("Code gekopieerd");
+                  }}
+                >
+                  <Copy className="h-4 w-4" /> Kopiëren
+                </Button>
+              </div>
+              <p className="text-center text-xs text-muted-foreground">
+                Log in op je tweede account, kies "Dit account samenvoegen met een ander" en vul deze code in. {t("merge_account.expires")}.
+              </p>
+              <QRCodeSVG value={ticket.qrPayload} size={140} />
+              <Button variant="ghost" size="sm" onClick={() => setTicket(null)}>Nieuwe code</Button>
             </div>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground">{t("merge_account.step_c")}</p>
+              <p className="text-xs text-muted-foreground">
+                Je bent al veilig ingelogd. Heb je een wachtwoord? Dan mag je het als extra bevestiging invullen — anders laat je dit leeg.
+              </p>
               <Input
                 type="password"
                 value={primaryPassword}
                 maxLength={72}
-                placeholder={t("merge_account.password")}
+                placeholder="Wachtwoord (optioneel)"
                 onChange={(e) => setPrimaryPassword(e.target.value)}
                 className="h-11 rounded-xl"
               />
               <Button
                 onClick={generate}
-                disabled={busyA || !primaryPassword}
+                disabled={busyA}
                 className="h-11 w-full gap-1.5 sm:w-auto"
               >
                 {busyA ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -144,18 +170,20 @@ export function MergeAccountWizard() {
             onChange={(e) => setPin(e.target.value)}
             className="h-11 rounded-xl tracking-widest"
           />
-          <p className="text-sm font-medium">{t("merge_account.step_c")}</p>
+          <p className="text-xs text-muted-foreground">
+            Wachtwoord (optioneel) — ingelogd via Google, Infomaniak of passkey? Laat leeg.
+          </p>
           <Input
             type="password"
             value={secondaryPassword}
             maxLength={72}
-            placeholder={t("merge_account.password")}
+            placeholder="Wachtwoord (optioneel)"
             onChange={(e) => setSecondaryPassword(e.target.value)}
             className="h-11 rounded-xl"
           />
           <Button
             onClick={execute}
-            disabled={busyD || !pin.trim() || !secondaryPassword}
+            disabled={busyD || !pin.trim()}
             className="h-11 w-full gap-1.5 sm:w-auto"
           >
             {busyD ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

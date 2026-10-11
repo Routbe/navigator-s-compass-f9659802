@@ -965,3 +965,10 @@ select:focus-visible {
   .bg-anim-grid-scroll::before,
   .bg-anim-fluid-wave::before, .bg-anim-fluid-wave::after { animation: none; }
 }
+
+/* Glass Media Capsule */
+.glass-capsule { box-shadow: 0 10px 40px -12px color-mix(in srgb, currentColor 25%, transparent), inset 0 1px 0 color-mix(in srgb, currentColor 12%, transparent); }
+.glass-wave-bar { transform-box: fill-box; transform-origin: center; animation: glass-wave 1.4s ease-in-out infinite; }
+@keyframes glass-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.7); } }
+.glass-glow { box-shadow: 0 0 8px currentColor; transition: width 1s linear; }
+@media (prefers-reduced-motion: reduce) { .glass-wave-bar { animation: none; } }

@@ -7,13 +7,11 @@ import { requireAuth } from "@/lib/auth/middleware";
  */
 export const startAccountMerge = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator((input: { password: string }) => {
-    if (!input?.password) throw new Error("password_required");
-    return input;
-  })
+  .inputValidator((input: { password?: string } | undefined) => ({ password: input?.password?.slice(0, 200) || "" }))
   .handler(async ({ data, context }) => {
     const { createMergeTicket, verifyOwnPassword } = await import("./account-merge.server");
-    if (!(await verifyOwnPassword(context.userId, data.password))) {
+    // The authenticated session authorizes this; a password is optional extra proof.
+    if (data.password && !(await verifyOwnPassword(context.userId, data.password))) {
       return { ok: false as const, reason: "bad_password" as const };
     }
     const ticket = await createMergeTicket(context.userId);
@@ -31,9 +29,8 @@ export const startAccountMerge = createServerFn({ method: "POST" })
  */
 export const redeemAccountMerge = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator((input: { pin?: string; token?: string; password: string }) => {
-    if (!input?.password) throw new Error("password_required");
-    if (!input.pin && !input.token) throw new Error("code_required");
+  .inputValidator((input: { pin?: string; token?: string; password?: string }) => {
+    if (!input?.pin && !input.token) throw new Error("code_required");
     return input;
   })
   .handler(async ({ data, context }) => {

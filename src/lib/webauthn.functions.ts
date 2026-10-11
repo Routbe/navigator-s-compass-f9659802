@@ -1,5 +1,6 @@
 /** Passkeys (WebAuthn) via Better Auth's passkey plugin on our own server. */
 import { authClient } from "@/lib/auth-client";
+import { passkeyErrorMessage } from "@/lib/passkey-errors";
 
 export const passkeysAvailable = true;
 
@@ -22,7 +23,11 @@ export async function listPasskeys() {
 
 export async function addPasskey(name: string) {
   const res = await authClient.passkey.addPasskey({ name });
-  if (res?.error) return { ok: false as const, reason: res.error.message ?? "This passkey could not be registered." };
+  if (res?.error) {
+    const e = res.error as { code?: string; status?: number; message?: string };
+    console.error("[passkeys] register failed", e.code, e.status, e.message);
+    return { ok: false as const, reason: passkeyErrorMessage(e.code, e.status, e.message) };
+  }
   return { ok: true as const };
 }
 

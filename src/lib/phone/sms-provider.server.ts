@@ -19,7 +19,7 @@ export function smsProviderId(): SmsProviderId {
 
 export function missingSmsKeys(): string[] {
   const need: Record<SmsProviderId, string[]> = {
-    "android-gateway": ["SMS_GATEWAY_URL", "SMS_API_KEY"],
+    "android-gateway": env("SMS_GATEWAY_USER") && env("SMS_GATEWAY_PASSWORD") ? [] : ["SMS_API_KEY"],
     twilio: ["SMS_API_KEY", "SMS_SENDER_ID"],
     brevo: ["SMS_API_KEY", "SMS_SENDER_ID"],
   };
@@ -33,21 +33,41 @@ async function ensureOk(res: Response, label: string) {
   }
 }
 
+/** sms-gate.app: base URL → /3rdparty/v1/message (cloud and local). */
+export function resolveGatewayUrl(raw: string): string {
+  const t = raw.trim().replace(/\/+$/, "");
+  return t.endsWith("/message") ? t : `${t}/3rdparty/v1/message`;
+}
+
+/** Basic auth for login:password (or SMS_GATEWAY_USER/PASSWORD), else Bearer. */
+export function resolveGatewayAuth(): string {
+  const user = env("SMS_GATEWAY_USER");
+  const pass = env("SMS_GATEWAY_PASSWORD");
+  if (user && pass) return `Basic ${btoa(`${user}:${pass}`)}`;
+  const key = env("SMS_API_KEY") ?? "";
+  return key.includes(":") ? `Basic ${btoa(key)}` : `Bearer ${key}`;
+}
+
 export function getSmsSender(): SmsSender | null {
   if (missingSmsKeys().length) return null;
   const id = smsProviderId();
-  const key = env("SMS_API_KEY")!;
+  const key = env("SMS_API_KEY") ?? "";
   const from = env("SMS_SENDER_ID");
   if (id === "android-gateway") {
+    const url = resolveGatewayUrl(env("SMS_GATEWAY_URL") ?? "https://api.sms-gate.app");
+    const auth = resolveGatewayAuth();
+    const deviceId = env("SMS_GATEWAY_DEVICE_ID") ?? from;
     return {
       id,
       async send(to, text) {
-        const res = await fetch(env("SMS_GATEWAY_URL")!, {
+        const payload: Record<string, unknown> = { phoneNumbers: [to], message: text };
+        if (deviceId) payload.deviceId = deviceId;
+        const res = await fetch(url, {
           method: "POST",
-          headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-          body: JSON.stringify({ to, text, sender: from ?? null }),
+          headers: { authorization: auth, "content-type": "application/json" },
+          body: JSON.stringify(payload),
         });
-        await ensureOk(res, "android-gateway");
+        await ensureOk(res, `android-gateway ${url}`);
       },
     };
   }

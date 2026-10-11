@@ -15,7 +15,7 @@ import {
   type IntegrationFilter,
 } from "@/lib/integrations-catalog";
 import { normalizeIntegrationValue, type Audience } from "@/lib/integrations-rules";
-import { disconnectSpotifyPresence, getMyPresence, setSpotifyPresenceVisible } from "@/lib/presence.functions";
+import { disconnectSpotifyPresence, setSpotifyPresenceScope, getMyPresence, setSpotifyPresenceVisible } from "@/lib/presence.functions";
 import { getMyIntegrations, removeIntegration, saveIntegration } from "@/lib/integrations.functions";
 
 const SPOTIFY_MESSAGES: Record<string, [ok: boolean, text: string]> = {
@@ -58,6 +58,7 @@ export function IntegrationsAccordion() {
   const fetchPresence = useServerFn(getMyPresence);
   const setVisible = useServerFn(setSpotifyPresenceVisible);
   const disconnect = useServerFn(disconnectSpotifyPresence);
+  const setScope = useServerFn(setSpotifyPresenceScope);
   const fetchMine = useServerFn(getMyIntegrations);
   const save = useServerFn(saveIntegration);
   const remove = useServerFn(removeIntegration);
@@ -85,7 +86,7 @@ export function IntegrationsAccordion() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["my-integrations"] });
 
-  const persist = async (item: Integration, opts: { handle?: string; audience: Audience; visible: boolean; useSso?: boolean }) => {
+  const persist = async (item: Integration, opts: { handle?: string; audience: Audience; visible: boolean; useSso?: boolean; showOnVerified?: boolean; showOnAlias?: boolean }) => {
     if (mine.data && !mine.data.ready) {
       toast.error("Database-update nodig", { description: "De tabel voor koppelingen bestaat nog niet." });
       return false;
@@ -246,6 +247,21 @@ export function IntegrationsAccordion() {
                         }}
                       />
                     </label>
+                    <ProfileScope
+                      label={item.label}
+                      verified={spotify!.showOnVerified}
+                      alias={spotify!.showOnAlias}
+                      disabled={busy === item.id}
+                      onChange={async (v) => {
+                        setBusy(item.id);
+                        try {
+                          await setScope({ data: v });
+                          await qc.invalidateQueries({ queryKey: ["my-presence"] });
+                        } finally {
+                          setBusy(null);
+                        }
+                      }}
+                    />
                     <button type="button" onClick={() => void unlink(item)} disabled={busy === item.id} className="inline-flex h-8 w-full items-center justify-center rounded-lg border border-border text-xs font-medium hover:bg-muted">
                       Ontkoppelen
                     </button>
@@ -267,6 +283,13 @@ export function IntegrationsAccordion() {
                         onCheckedChange={(v) => void persist(item, { handle: row.handle, audience: row.audience, visible: v, useSso: row.verified })}
                       />
                     </label>
+                    <ProfileScope
+                      label={item.label}
+                      verified={row.showOnVerified}
+                      alias={row.showOnAlias}
+                      disabled={busy === item.id}
+                      onChange={(v) => void persist(item, { handle: row.handle, audience: row.audience, visible: row.visible, useSso: row.verified, showOnVerified: v.verified, showOnAlias: v.alias })}
+                    />
                     <button type="button" onClick={() => void unlink(item)} disabled={busy === item.id} className="inline-flex h-8 w-full items-center justify-center rounded-lg border border-border text-xs font-medium hover:bg-muted">
                       Ontkoppelen
                     </button>
@@ -324,5 +347,27 @@ export function IntegrationsAccordion() {
         </div>
       </AccordionContent>
     </AccordionItem>
+  );
+}
+
+/** Independent per-profile visibility: Verified profile and/or Privacy Alias. */
+function ProfileScope({ label, verified, alias, disabled, onChange }: {
+  label: string; verified: boolean; alias: boolean; disabled?: boolean;
+  onChange: (v: { verified: boolean; alias: boolean }) => void;
+}) {
+  return (
+    <fieldset className="space-y-1 rounded-lg border border-border p-2 text-[11px]">
+      <legend className="px-1 text-muted-foreground">Zichtbaar op</legend>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={verified} disabled={disabled} aria-label={`${label} op Geverifieerd profiel`}
+          onChange={(e) => onChange({ verified: e.target.checked, alias })} className="h-3.5 w-3.5 accent-primary" />
+        Toon op Geverifieerd profiel
+      </label>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={alias} disabled={disabled} aria-label={`${label} op Privacy Alias`}
+          onChange={(e) => onChange({ verified, alias: e.target.checked })} className="h-3.5 w-3.5 accent-primary" />
+        Toon op Privacy Alias
+      </label>
+    </fieldset>
   );
 }

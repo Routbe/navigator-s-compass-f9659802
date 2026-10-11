@@ -178,7 +178,17 @@ export default function AccountSettings() {
     setMfaBusy(true);
     const res = await authClient.twoFactor.enable({ password: mfaPassword || undefined } as never);
     setMfaBusy(false);
-    if (res.error) return toast.error(res.error.message ?? "Could not start 2FA setup.");
+    if (res.error) {
+      const e = res.error as { code?: string; status?: number; message?: string };
+      console.error("[2fa] enable failed", e.code, e.status, e.message);
+      if (e.code === "INVALID_PASSWORD") {
+        return toast.error(mfaPassword
+          ? "That password is not correct."
+          : "Your account has a password: enter it once to start 2FA setup.");
+      }
+      if (e.status === 401) return toast.error("Your session expired. Sign in again and retry.");
+      return toast.error(`Could not start 2FA setup${e.message ? `: ${e.message}` : "."}`);
+    }
     setMfaUri(res.data.totpURI);
     setMfaBackup(res.data.backupCodes ?? []);
   };
