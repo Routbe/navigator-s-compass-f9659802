@@ -364,7 +364,7 @@ export function enabledProviders(): string[] {
   if (pair("GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET")) list.push("github");
   if (pair("GITLAB_CLIENT_ID", "GITLAB_CLIENT_SECRET")) list.push("gitlab");
   if (pair("APPLE_CLIENT_ID", "APPLE_CLIENT_SECRET")) list.push("apple");
-  if (pair("OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET") && env("OIDC_DISCOVERY_URL")) list.push("oidc");
+  if (oidcConfigured()) list.push("oidc");
   if (pair("INFOMANIAK_CLIENT_ID", "INFOMANIAK_CLIENT_SECRET")) list.push("infomaniak");
   if (pair("PROTON_CLIENT_ID", "PROTON_CLIENT_SECRET") && env("PROTON_DISCOVERY_URL")) list.push("proton");
   return list;
@@ -382,6 +382,7 @@ const PROVIDER_KEYS: Record<string, string[]> = {
 
 /** Is a sign-in provider fully configured? Names only — never values. */
 export function isProviderConfigured(id: string): boolean {
+  if (id === "oidc") return oidcConfigured();
   const keys = PROVIDER_KEYS[id];
   if (!keys) return false;
   return keys.every((k) => Boolean(envAny(k)));
@@ -389,6 +390,7 @@ export function isProviderConfigured(id: string): boolean {
 
 /** Key NAMES a provider still misses — safe for logs and diagnostics. */
 export function missingProviderKeys(id: string): string[] {
+  if (id === "oidc") return oidcConfigured() ? [] : PROVIDER_KEYS["oidc"]!.filter((k) => !envAny(k));
   const keys = PROVIDER_KEYS[id];
   return keys ? keys.filter((k) => !envAny(k)) : ["*"];
 }
