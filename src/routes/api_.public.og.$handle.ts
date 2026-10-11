@@ -42,6 +42,9 @@ export const Route = createFileRoute("/api_/public/og/$handle")({
           const row = rows[0];
           if (!row) return new Response("Not found", { status: 404 });
           const prefs = parseDisplayPrefs(row["display_prefs"]);
+          // Profielen die het lid op privé heeft gezet leveren nooit een
+          // gepersonaliseerde kaart: bio, tagline en avatar blijven verborgen.
+          if (!prefs.publicProfile) return new Response("Not found", { status: 404 });
           name = ((row["display_name"] as string | null) || `@${handle}`).trim();
           tagline =
             prefs.metaDescription ||
