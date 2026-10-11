@@ -21,6 +21,15 @@ describe("integration templates", () => {
     expect(p).not.toContain("is_verified_person");
     expect(p).not.toMatch(/routsec_/);
   });
+  it("embeds the official bunny SVG and brand colors in every AI prompt", () => {
+    for (const p of [buildAiPrompt(app, "cursor", "nextjs"), buildHandleSyncPrompt({ name: "Demo", clientId: "rout_abc" })]) {
+      expect(p).toContain("## Branding & UI");
+      expect(p).toContain("<svg");
+      expect(p).toContain('aria-label="ROUT"');
+      expect(p).toContain("#7026E1");
+      expect(p).toContain("#41DB97");
+    }
+  });
   it("adds identity link table only with auto-discovery", () => {
     expect(buildSqlSchema(app)).not.toContain("user_identities");
     expect(buildSqlSchema({ ...app, accountDiscoveryEnabled: true })).toContain("user_identities");
