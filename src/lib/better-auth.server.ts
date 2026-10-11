@@ -71,6 +71,16 @@ function pair(id: string, secret: string) {
   return clientId && clientSecret ? { clientId, clientSecret } : null;
 }
 
+/** First-party publieke PKCE-client voor de native "ROUT ID"-login (db/78). */
+export const NATIVE_OIDC_CLIENT_ID = "rout_native_self";
+
+/** oidc is geconfigureerd als álle OIDC_* er zijn, of géén enkele (native fallback). */
+function oidcConfigured(): boolean {
+  const keys = ["OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET", "OIDC_DISCOVERY_URL"];
+  const present = keys.filter((k) => Boolean(envAny(k)));
+  return present.length === 0 || present.length === keys.length;
+}
+
 /** Origin the browser is actually using (proxy-aware: x-forwarded-host/proto). */
 function requestOrigin(request?: Request): string | null {
   if (!request) return null;
@@ -186,10 +196,22 @@ export function createRoutAuth(request?: Request) {
   ];
 
   const genericConfigs: unknown[] = [];
+  // "ROUT ID" (voorheen Keycloak): zonder externe OIDC_*-configuratie valt deze
+  // provider terug op onze EIGEN sovereign OIDC-provider (publieke PKCE-client
+  // `rout_native_self`, geen externe sleutels nodig). Met OIDC_* ingesteld
+  // wijst hij naar die externe Keycloak-compatible provider.
   const oidc = pair("OIDC_CLIENT_ID", "OIDC_CLIENT_SECRET");
   const discoveryUrl = env("OIDC_DISCOVERY_URL");
   if (oidc && discoveryUrl) {
     genericConfigs.push({ providerId: "oidc", discoveryUrl, ...oidc, scopes: ["openid", "email", "profile"], pkce: true });
+  } else if (!oidc && !discoveryUrl) {
+    genericConfigs.push({
+      providerId: "oidc",
+      discoveryUrl: `${canonicalAppUrl()}/.well-known/openid-configuration`,
+      clientId: NATIVE_OIDC_CLIENT_ID,
+      scopes: ["openid", "email", "profile"],
+      pkce: true,
+    });
   }
   // Proton (Zwitserland) — OIDC via discovery. Proton publiceert (nog) geen
   // openbare OIDC voor derden: alleen actief met eigen client + discovery-URL.
