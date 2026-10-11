@@ -1,23 +1,10 @@
 # Roadmap
-- [x] Site status emails (sign-in, developer console, subdomain) + confirm-first booking/review links
-- [x] Review confirmation page behind admin email buttons
-- [x] Creator eligibility (10,000 followers), pink creator and new business badge
-- [ ] Verify email renders, approval security and badge tests; identify service blockers
-- [ ] Ambient Weer: settings, private Pro webhook, cached weather and live atmospheric overlay
-- [x] Neon database updates (all applied)
-- [x] Neon connection card linked
-- [ ] Separate app login (rout_app) for DATABASE_URL — waiting on the user
-- [ ] Signed-in end-to-end test — after that
-- [x] vCard component in Links & components (job title, phones, address, birthday, note, website)
-- [x] Share menu (link, QR, business card PNG/PDF) + NFC waitlist
-- [ ] Modular status balloon (shape, outline, text FX, interactive fills, glow) — uploaded brief, next
-- [ ] Universal @-handle inputs + brand icons for every component — uploaded brief, next
-- [ ] Run database updates db/74 and db/75 — needs the migration run
-- [x] Spotify redirect fix: always https://rout.be callback behind proxies
-- [x] Phase 1: brand icons + smart @-handle inputs (W.social etc.) — then checkpoint
-- [ ] Phase 2: modular status bubble (shape, border, font, text FX, fire/snow/water fills)
-- [x] Infomaniak: double-click-safe sign-in button, duplicate callback redirect, faster profile read
-- [x] Settings tabs scroll on mobile
-- [x] Real 2FA (authenticator app), passkeys, phone verification wiring
-- [ ] Run database update db/77 (2FA + passkeys) — needs the migration run
-- [ ] SMS keys (SMS_API_KEY etc.) — waiting on the user
+
+## Actief (goedgekeurd plan)
+- [ ] AI-prompts: branding-sectie met officiële bunny-SVG + kleuren (integration-templates.ts + tests)
+- [ ] Mails: appCreatedMail (eigenaar) + verificationRequestedMail (admin) via site-mail.server.ts
+- [ ] Native OIDC-login: oidc-provider valt terug op eigen discovery + first-party client (db/78, ROUT_NATIVE_OIDC_SECRET), label "ROUT ID"
+
+## Daarna (nieuw verzoek)
+- [ ] QR-persistentie: QR-stijl opslaan in profiles.qr_settings (jsonb), herladen in Studio
+- [ ] Social share inspecteur: smart defaults (titel = naam (@handle) — ROUT, omschrijving = bio/tagline, OG-afbeelding = avatar), overschrijfbaar
