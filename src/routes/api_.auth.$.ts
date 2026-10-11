@@ -9,7 +9,11 @@ import { createFileRoute } from "@tanstack/react-router";
  */
 
 /** POST endpoints where the provider id travels in the JSON body. */
-const SOCIAL_BODY_PATHS = new Set(["/sign-in/social", "/sign-in/oauth2"]);
+const SOCIAL_BODY_PATHS = new Set(["/sign-in/social", "/sign-in/oauth2", "/link-social", "/oauth2/link"]);
+/** Linking (signed-in member attaches a provider) vs. signing in. */
+const LINK_PATHS = new Set(["/link-social", "/oauth2/link"]);
+/** Callback errors that just mean "second/stale hit of the same callback". */
+const STALE_CALLBACK_ERRORS = new Set(["state_mismatch", "please_restart_the_process", "invalid_code", "state_not_found"]);
 
 /** Endpoints that need a valid ALTCHA proof in the `x-altcha` header. */
 export const ALTCHA_PATHS = new Set([
@@ -114,8 +118,10 @@ export async function handleAuthRequest({ request }: { request: Request }) {
         // State cookie lives on the request host; GitLab returns to the canonical
         // host. Start the flow there instead of failing with state_mismatch.
         console.warn(`[auth] gitlab sign-in on ${host}; sending to ${canonicalAuthOrigin()}`);
+        // Linking needs the member's session on the canonical host too.
+        const dest = LINK_PATHS.has(relativePath) ? "/settings?tab=identities" : "/auth";
         return Response.json(
-          { url: `${canonicalAuthOrigin()}/auth`, redirect: true },
+          { url: `${canonicalAuthOrigin()}${dest}`, redirect: true },
           { headers: { "cache-control": "no-store" } },
         );
       }
@@ -141,7 +147,10 @@ export async function handleAuthRequest({ request }: { request: Request }) {
       if (res.status >= 400 || errParam) {
         // Dubbele/verlopen callback (bv. dubbelklik bij de provider): als de
         // eerste poging de sessie al aanmaakte, stil doorsturen i.p.v. foutpagina.
-        try {
+        // Linking errors (account taken, e-mail mismatch) must reach the
+        // settings page — never be swallowed as a "duplicate callback".
+        const stale = !errParam || STALE_CALLBACK_ERRORS.has(errParam);
+        if (stale) try {
           const session = await createRoutAuth(request).api.getSession({ headers: request.headers });
           if (session?.user) {
             console.info("[auth] duplicate OAuth callback ignored; session already active", { error: errParam, path: relativePath });
