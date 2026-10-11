@@ -1,0 +1,13 @@
+{
+  "source": "github: Routbe/navigator-s-compass-5c825687 (ROUT QR platform)",
+  "capabilities": [
+    { "capability": "application code", "source": "github repo", "outcome": "copied in place (TanStack Start, same stack as template)", "status": "verified", "next_action": null },
+    { "capability": "build & preview", "source": "vite/tanstack", "outcome": "build OK, home page renders QR studio", "status": "verified", "next_action": null },
+    { "capability": "database schema", "source": "db/ 77 SQL migrations (Neon Postgres)", "outcome": "preserved as external Neon provider; migrations not yet applied to a live DB", "status": "pending", "next_action": "DATABASE_URL secret + run bun scripts/migrate.ts with MIGRATION_URL" },
+    { "capability": "auth (better-auth + passkeys + OAuth)", "source": "better-auth 1.6.23", "outcome": "code preserved; requires secrets", "status": "pending", "next_action": "BETTER_AUTH_SECRET, BETTER_AUTH_URL, OAuth provider keys" },
+    { "capability": "records / existing users", "source": "none attached", "outcome": "no record export in repo", "status": "pending", "next_action": "request CSV/JSON exports from Neon dashboard" },
+    { "capability": "payments (Stripe, bunq, SEPA)", "source": "repo code", "outcome": "preserved", "status": "pending", "next_action": "Stripe keys + webhook secret via secure secret form" },
+    { "capability": "email (Brevo templates)", "source": "src/emails + scripts", "outcome": "preserved", "status": "pending", "next_action": "Brevo API key" },
+    { "capability": "public API routes & cron (/api/public/*)", "source": "repo routes", "outcome": "routes copied", "status": "pending", "next_action": "LOVABLE_CRON_SECRET and provider secrets" }
+  ]
+}
