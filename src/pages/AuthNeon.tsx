@@ -31,7 +31,7 @@ import { OtpInput } from "@/components/otp/OtpInput";
 import { redeemLoginCodeFn } from "@/lib/login-code.functions";
 
 /** Providers die via Better Auth's generic OAuth/OIDC-plugin lopen. */
-const GENERIC_OAUTH = new Set(["oidc", "infomaniak"]);
+const GENERIC_OAUTH = new Set(["oidc", "infomaniak", "proton"]);
 
 /** Deliberately permissive: catches typos, never rejects a valid address. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
