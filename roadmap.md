@@ -14,3 +14,9 @@
 - [ ] QR-beheer: grid met scan-analytics, opnieuw downloaden, stijl bewerken
 - [ ] Short Links: beheertabel met kliktellingen en bewerkbare bestemmings-URL's
 - [ ] Scaleway-retentie: free 7 dagen (configureerbaar tot 3 mnd), PRO/verified "Lifetime" (50 assets / 500MB permanent); Asset Manager UI met verloopstatus, verwijderen, upgrade
+
+## Deze ronde
+- [x] sms-gate.app payload/auth, +32 automatisch, buitenland via inkomende sms (webhook /api/public/sms/inbound)
+- [x] 2FA/passkey-foutmeldingen, samenvoegen zonder wachtwoord, profielscope (db/79), Glass Media Capsule + 🎧
+- [ ] Telegram-bot verificatie + admin-wachtrij (niet gebouwd)
+- [ ] Dashboard/QR/Short Links/Scaleway-retentie (niet gebouwd)

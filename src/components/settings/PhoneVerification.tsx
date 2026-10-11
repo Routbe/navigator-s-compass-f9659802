@@ -38,6 +38,7 @@ export function PhoneVerification() {
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [manual, setManual] = useState<{ code: string; line: string } | null>(null);
 
   useEffect(() => {
     if (!expiresAt) return;
@@ -57,6 +58,8 @@ export function PhoneVerification() {
         setNow(Date.now());
         setCode("");
         toast.success(`Code verstuurd naar ${r.masked}`);
+      } else if (r.status === "manual") {
+        setManual({ code: r.code, line: r.line });
       } else toast.error(MESSAGES[r.status] ?? "Er ging iets mis.");
     } catch {
       toast.error("Er ging iets mis.");
@@ -115,6 +118,17 @@ export function PhoneVerification() {
               {expiresAt ? "Opnieuw" : "Code sturen"}
             </Button>
           </div>
+          {manual && (
+            <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 text-sm">
+              Voor buitenlandse nummers is automatische sms uitgeschakeld. Stuur een sms met code{" "}
+              <strong className="font-mono">{manual.code}</strong> vanaf jouw nummer naar onze verificatielijn{" "}
+              <strong>{manual.line}</strong> of via de officiële ROUT Telegram-bot. Geldig 10 minuten.
+            </div>
+          )}
+          <p className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full border border-border px-2 py-0.5 opacity-60">WhatsApp · Coming soon</span>
+            <span className="rounded-full border border-border px-2 py-0.5 opacity-60">Wereldwijde sms · Coming soon</span>
+          </p>
           {expiresAt && (
             <div className="flex flex-wrap items-center gap-2">
               <Input inputMode="numeric" autoComplete="one-time-code" placeholder="123456" maxLength={6}
